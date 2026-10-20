@@ -1,0 +1,452 @@
+/* Основные стили: сброс, safe area, раскладка экранов, кнопки.
+ * Цвета берём только из переменных (см. themes.css). */
+
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --tap: 44px;                  /* минимальная зона касания (Apple HIG) */
+  --gap: 8px;
+  --page-pad: 12px;
+  --radius: 12px;
+
+  --dur: 200ms;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Атрибут hidden должен работать даже там, где у элемента задан display */
+[hidden] {
+  display: none !important;
+}
+
+html {
+  height: 100%;
+  background: var(--bg);        /* фон под статус-баром (black-translucent) */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  /* Safe area на body: статус-бар iOS прозрачный, и без отступа контент
+   * залез бы под вырез/Dynamic Island. Так же закрываем punch-hole на Android */
+  padding-top: var(--safe-area-inset-top);
+  padding-bottom: var(--safe-area-inset-bottom);
+  padding-left: var(--safe-area-inset-left);
+  padding-right: var(--safe-area-inset-right);
+
+  height: 100%;
+  overflow: hidden;             /* игра помещается в экран, прокрутка не нужна */
+  overscroll-behavior: none;    /* без «резинки» при оттяжке */
+
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--bg);
+
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;  /* без контекстного меню при долгом нажатии (iOS) */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;   /* убирает задержку и zoom по двойному тапу */
+}
+
+#app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen {
+  flex: 1 1 auto;
+  min-height: 0;                /* без этого flex-ребёнок не сжимается и вылезает за экран */
+  display: flex;
+  flex-direction: column;
+  padding: var(--page-pad);
+  max-width: 520px;             /* на планшетах и в ландшафте не растягиваем */
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ---------- Кнопки ---------- */
+
+button {
+  font: inherit;
+  color: inherit;
+  margin: 0;
+  border: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn {
+  min-height: 52px;
+  padding: 0 20px;
+  border-radius: var(--radius);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  transition: transform var(--dur) var(--ease-out), background-color var(--dur) var(--ease-out);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+.btn-secondary,
+.btn-level {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:active,
+.btn-level:active {
+  background: var(--surface-pressed);
+}
+
+.icon-btn {
+  width: var(--tap);
+  height: var(--tap);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  font-size: 1.5rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+
+.icon-btn:active {
+  background: var(--surface-pressed);
+}
+
+/* ---------- Экран меню ---------- */
+
+.menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--tap);
+}
+
+.menu-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* В ландшафте меню не помещается по высоте — разрешаем прокрутку */
+#screen-menu {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.menu-body {
+  flex: 1 0 auto;               /* не сжимается, поэтому при нехватке места появляется прокрутка */
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 8vh;          /* оптический центр чуть выше геометрического */
+}
+
+/* Центрируем распорками, а не justify-content: center — при переполнении
+ * центрирование обрезало бы верх меню, до которого не доскроллить */
+.menu-body::before,
+.menu-body::after {
+  content: '';
+  flex: 1 0 0;
+}
+
+.menu-subtitle {
+  margin: 8px 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.difficulty-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ---------- Экран игры: каркас ---------- */
+
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  min-height: var(--tap);
+}
+
+.game-info {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;   /* цифры таймера не «прыгают» по ширине */
+}
+
+.game-info-item {
+  white-space: nowrap;
+}
+
+/* Размер поля: на узких экранах — по ширине, на низких — по высоте,
+ * чтобы панель цифр всегда оставалась в пределах экрана (iPhone SE) */
+.board {
+  /* 310px — высота всего, что не поле: шапка, действия, цифры, отступы.
+   * Первая строка с vh — запасная для браузеров без dvh (iOS < 15.4) */
+  width: min(100%, calc(100vh - 310px - var(--safe-area-inset-top) - var(--safe-area-inset-bottom)));
+  width: min(100%, calc(100dvh - 310px - var(--safe-area-inset-top) - var(--safe-area-inset-bottom)));
+  min-width: 240px;
+  aspect-ratio: 1 / 1;
+  margin: 8px auto;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: auto;
+}
+
+.action-btn {
+  min-height: var(--tap);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color var(--dur) var(--ease-out);
+}
+
+.action-btn:active {
+  background: var(--surface-pressed);
+}
+
+.action-btn[aria-pressed="true"] {
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+.numpad {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);   /* 5 колонок — кнопки шире 44px даже на SE */
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.num-btn {
+  position: relative;
+  min-height: 52px;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--accent-strong);
+  transition: transform var(--dur) var(--ease-out), background-color var(--dur) var(--ease-out);
+}
+
+.num-btn:active {
+  transform: scale(0.96);
+  background: var(--surface-pressed);
+}
+
+.num-digit {
+  font-size: 1.625rem;
+  font-weight: 500;
+}
+
+/* Сколько цифр ещё осталось поставить */
+.num-left {
+  position: absolute;
+  right: 6px;
+  bottom: 3px;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+/* Кнопки с :hover — только там, где есть мышь, иначе на тач-экранах
+ * hover «залипает» после касания */
+@media (hover: hover) {
+  .btn-secondary:hover,
+  .btn-level:hover,
+  .action-btn:hover,
+  .num-btn:hover,
+  .icon-btn:hover {
+    background: var(--surface-pressed);
+  }
+}
+
+/* Уважаем системную настройку «уменьшить движение» */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- Переключатели настроек ---------- */
+
+.settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));   /* при скрытой вибрации звук занимает всю строку */
+  gap: var(--gap);
+}
+
+.toggle {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.9375rem;
+}
+
+.toggle[aria-checked="true"] .toggle-state {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.toggle[aria-checked="false"] .toggle-state {
+  color: var(--text-muted);
+}
+
+/* ---------- Экран статистики ---------- */
+
+.stats-header {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  min-height: var(--tap);
+}
+
+.stats-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.stats-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 0 16px;
+}
+
+.stats-body h3 {
+  margin: 22px 0 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: var(--gap);
+  margin: 0;
+}
+
+.stats-grid > div {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.stats-grid dt {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.stats-grid dd {
+  margin: 2px 0 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.achievements,
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.achievement {
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.achievement-title { font-weight: 600; }
+.achievement-desc { font-size: 0.875rem; color: var(--text-muted); }
+.achievement-status { margin-top: 4px; font-size: 0.8125rem; }
+
+.achievement.unlocked .achievement-status { color: var(--accent-strong); font-weight: 600; }
+.achievement.locked .achievement-title,
+.achievement.locked .achievement-status { color: var(--text-muted); }
+
+.history-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.history-level { font-weight: 600; }
+.history-time { text-align: right; font-variant-numeric: tabular-nums; }
+.history-meta { font-size: 0.8125rem; color: var(--text-muted); }
+.history-result { text-align: right; font-size: 0.8125rem; font-weight: 600; }
+.history-result.won { color: var(--accent-strong); }
+.history-result.lost { color: var(--error); }
+
+.empty-note {
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+/* Четыре уровня сложности — ровно 2x2, а не 3+1 */
+#stats-best {
+  grid-template-columns: repeat(2, 1fr);
+}

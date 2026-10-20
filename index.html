@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <!-- Базовые PWA -->
+  <meta charset="UTF-8">
+  <!-- viewport-fit=cover нужен, чтобы env(safe-area-inset-*) вообще заработал -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Судоку</title>
+  <!-- Две theme-color: адресная строка/системный бар Android следует системной теме.
+       Ручное переключение темы потом обновит их из app.js -->
+  <meta name="theme-color" content="#4a90e2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- iOS: без этих тегов «На экран Домой» создаст просто закладку Safari -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Судоку">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+
+  <!-- Android -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
+  <!-- Не превращать цифры в ссылки на телефон -->
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- Тему применяем до отрисовки, чтобы не было вспышки светлого фона -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('sudoku:theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) { /* localStorage может быть недоступен — не критично */ }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/themes.css">
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+  <div id="app" data-screen="menu">
+
+    <!-- ===== Экран меню ===== -->
+    <main id="screen-menu" class="screen" aria-labelledby="menu-title">
+      <header class="menu-header">
+        <h1 id="menu-title">Судоку</h1>
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="Переключить тему">
+          <span aria-hidden="true">◐</span>
+        </button>
+      </header>
+
+      <section class="menu-body" aria-label="Новая игра">
+        <button id="continue-btn" class="btn btn-primary" type="button" hidden>Продолжить игру</button>
+
+        <h2 class="menu-subtitle">Новая игра</h2>
+        <div class="difficulty-list" role="group" aria-label="Выбор сложности">
+          <button class="btn btn-level" type="button" data-difficulty="easy">Легкий</button>
+          <button class="btn btn-level" type="button" data-difficulty="medium">Средний</button>
+          <button class="btn btn-level" type="button" data-difficulty="hard">Сложный</button>
+          <button class="btn btn-level" type="button" data-difficulty="expert">Эксперт</button>
+        </div>
+
+        <button id="stats-btn" class="btn btn-secondary" type="button">Статистика и достижения</button>
+
+        <div class="settings" role="group" aria-label="Настройки">
+          <button id="sound-toggle" class="toggle" type="button" role="switch" aria-checked="true">
+            <span class="toggle-label">Звук</span>
+            <span class="toggle-state" aria-hidden="true">Вкл</span>
+          </button>
+          <!-- Скрывается скриптом на устройствах без вибрации (iOS) -->
+          <button id="vibration-toggle" class="toggle" type="button" role="switch" aria-checked="true">
+            <span class="toggle-label">Вибрация</span>
+            <span class="toggle-state" aria-hidden="true">Вкл</span>
+          </button>
+        </div>
+
+        <!-- Android/Chrome: кнопка появляется только когда браузер разрешил установку -->
+        <button id="install-btn" class="btn btn-secondary" type="button" hidden>Установить приложение</button>
+        <!-- iOS Safari не умеет показывать установку программно — подсказываем вручную -->
+        <p id="ios-hint" class="hint" hidden>
+          Чтобы установить: нажмите «Поделиться» в Safari и выберите «На экран Домой».
+        </p>
+      </section>
+    </main>
+
+    <!-- ===== Экран статистики ===== -->
+    <section id="screen-stats" class="screen" aria-labelledby="stats-title" hidden>
+      <header class="stats-header">
+        <button id="stats-back-btn" class="icon-btn" type="button" aria-label="Назад в меню">
+          <span aria-hidden="true">‹</span>
+        </button>
+        <h2 id="stats-title">Статистика</h2>
+      </header>
+
+      <div class="stats-body">
+        <dl id="stats-summary" class="stats-grid"></dl>
+
+        <h3>Лучшее время</h3>
+        <dl id="stats-best" class="stats-grid"></dl>
+
+        <h3>Достижения</h3>
+        <ul id="stats-achievements" class="achievements"></ul>
+
+        <h3>История игр</h3>
+        <ol id="stats-history" class="history"></ol>
+      </div>
+    </section>
+
+    <!-- ===== Экран игры ===== -->
+    <section id="screen-game" class="screen" aria-label="Игра" hidden>
+      <header class="game-header">
+        <button id="back-btn" class="icon-btn" type="button" aria-label="В меню">
+          <span aria-hidden="true">‹</span>
+        </button>
+        <div class="game-info">
+          <span id="difficulty-label" class="game-info-item"></span>
+          <span id="timer" class="game-info-item" role="timer" aria-label="Время игры">00:00</span>
+          <span id="errors" class="game-info-item" aria-label="Ошибки">Ошибки: 0/3</span>
+        </div>
+        <button id="pause-btn" class="icon-btn" type="button" aria-label="Пауза">
+          <span aria-hidden="true">❚❚</span>
+        </button>
+      </header>
+
+      <!-- Сетку 9x9 отрисует ui.js (Этап 3) -->
+      <div id="board" class="board" role="grid" aria-label="Игровое поле судоку"></div>
+
+      <div class="actions" role="toolbar" aria-label="Действия">
+        <button id="undo-btn" class="action-btn" type="button">Отменить</button>
+        <button id="redo-btn" class="action-btn" type="button">Повторить</button>
+        <button id="erase-btn" class="action-btn" type="button">Стереть</button>
+        <button id="notes-btn" class="action-btn" type="button" aria-pressed="false">Заметка</button>
+        <button id="hint-btn" class="action-btn" type="button">Подсказка</button>
+        <button id="check-btn" class="action-btn" type="button">Проверить</button>
+      </div>
+
+      <div id="numpad" class="numpad" role="group" aria-label="Ввод цифр">
+        <button class="num-btn" type="button" data-num="1"><span class="num-digit">1</span><span class="num-left" aria-hidden="true">9</span></button>
+        <button class="num-btn" type="button" data-num="2"><span class="num-digit">2</span><span class="num-left" aria-hidden="true">9</span></button>
+        <button class="num-btn" type="button" data-num="3"><span class="num-digit">3</span><span class="num-left" aria-hidden="true">9</span></button>
+        <button class="num-btn" type="button" data-num="4"><span class="num-digit">4</span><span class="num-left" aria-hidden="true">9</span></button>
+        <button class="num-btn" type="button" data-num="5"><span class="num-digit">5</span><span class="num-left" aria-hidden="true">9</span></button>
+        <button class="num-btn" type="button" data-num="6"><span class="num-digit">6</span><span class="num-left" aria-hidden="true">9</span></button>
+        <button class="num-btn" type="button" data-num="7"><span class="num-digit">7</span><span class="num-left" aria-hidden="true">9</span></button>
+        <button class="num-btn" type="button" data-num="8"><span class="num-digit">8</span><span class="num-left" aria-hidden="true">9</span></button>
+        <button class="num-btn" type="button" data-num="9"><span class="num-digit">9</span><span class="num-left" aria-hidden="true">9</span></button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Диалог (пауза, итоги, подтверждение). Вне #app, чтобы фон можно было
+       сделать inert, не отключая сам диалог -->
+  <div id="overlay" class="overlay" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-text">
+      <h2 id="dialog-title" class="dialog-title"></h2>
+      <div id="dialog-text" class="dialog-text"></div>
+      <div id="dialog-actions" class="dialog-actions"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+  <div id="live" class="sr-only" aria-live="polite"></div>
+
+  <!-- Порядок важен: app.js использует SudokuStorage, ui.js — Sudoku, SudokuStorage и App -->
+  <script src="js/storage.js"></script>
+  <script src="js/sudoku.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>

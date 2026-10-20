@@ -1,0 +1,259 @@
+/* Игровое поле, диалоги, подсказки. Цвета — только из переменных (themes.css).
+ * --cell-px (размер клетки) выставляет ui.js: от него зависит размер цифр,
+ * а сам CSS ширину поля в пикселях не знает. До первого замера работает запасное значение. */
+
+.board {
+  --cell-px: 40px;
+  display: grid;
+  grid-template-rows: repeat(9, 1fr);
+  background: var(--bg);
+  border: 2px solid var(--grid-strong);
+  border-radius: 6px;
+  overflow: hidden;
+  flex: none;                       /* иначе flex сожмёт высоту и сломает aspect-ratio */
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+}
+
+/* ---------- Клетка ---------- */
+
+.cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  background: var(--bg);
+  border-right: 1px solid var(--grid);
+  border-bottom: 1px solid var(--grid);
+  cursor: pointer;
+  outline: none;
+}
+
+/* Толстые границы блоков 3x3: после 3-й и 6-й клетки/строки.
+ * Внешний край поля уже обведён рамкой самого .board */
+.cell:nth-child(3n):not(:last-child) { border-right: 2px solid var(--grid-strong); }
+.row:nth-child(3n):not(:last-child) .cell { border-bottom: 2px solid var(--grid-strong); }
+.cell:last-child { border-right: 0; }
+.row:last-child .cell { border-bottom: 0; }
+
+.cell.related { background: var(--cell-related); }
+
+.cell.selected {
+  background: var(--cell-selected);
+  box-shadow: inset 0 0 0 2px var(--accent);   /* рамка — не только цвет фона, иначе выбор плохо виден на светлой теме */
+}
+
+.cell:focus-visible {
+  box-shadow: inset 0 0 0 3px var(--accent-strong);
+}
+
+/* «Проверить»: рамка, а не только цвет текста, чтобы не зависеть от восприятия красного */
+.cell.wrong {
+  box-shadow: inset 0 0 0 2px var(--error);
+}
+
+/* ---------- Цифры и заметки ---------- */
+
+.val {
+  font-size: max(24px, calc(var(--cell-px) * 0.62));   /* не меньше 24px по ТЗ */
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;             /* касание всегда попадает в саму клетку */
+}
+
+.cell.given .val { color: var(--given); font-weight: 600; }
+.cell.user .val { color: var(--user); }
+.cell.conflict .val,
+.cell.wrong .val { color: var(--error); }
+
+.notes {
+  position: absolute;
+  inset: 1px;
+  display: none;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  place-items: center;
+  font-size: max(10px, calc(var(--cell-px) * 0.27));   /* не меньше 10px по ТЗ */
+  line-height: 1;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.cell:not(.filled) .notes { display: grid; }
+
+/* ---------- Анимации ---------- */
+
+.val.pop { animation: pop 150ms var(--ease-out); }
+.val.pulse { animation: pulse 300ms var(--ease-out) 2; }
+
+@keyframes pop {
+  from { transform: scale(0.6); opacity: 0.4; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.2); }
+}
+
+/* Победа: волна от левого верхнего угла (--d = строка + столбец) */
+.board.win .cell {
+  animation: wave 450ms var(--ease-out) both;
+  animation-delay: calc(var(--d) * 28ms);
+}
+
+@keyframes wave {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.12); background: var(--cell-selected); z-index: 1; }
+  100% { transform: scale(1); }
+}
+
+/* ---------- Шапка, кнопки ---------- */
+
+.game-info-item.danger { color: var(--error); font-weight: 600; }
+
+/* Символ ❚❚ при размере по умолчанию для иконок выглядит слишком грубо */
+#pause-btn { font-size: 1rem; }
+
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.num-btn.done { opacity: 0.45; }   /* цифра выставлена полностью, но кнопка остаётся рабочей: нужна для заметок и замены */
+
+/* ---------- Диалог (пауза, итоги, подтверждение) ---------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: calc(var(--page-pad) + var(--safe-area-inset-top)) calc(var(--page-pad) + var(--safe-area-inset-right))
+           calc(var(--page-pad) + var(--safe-area-inset-bottom)) calc(var(--page-pad) + var(--safe-area-inset-left));
+  background: var(--bg);
+  animation: fade-in var(--dur) var(--ease-out);
+}
+
+/* Полупрозрачный фон там, где поддерживается color-mix; иначе остаётся сплошной.
+ * При паузе фон всегда сплошной — поле скрыто, подсматривать нельзя */
+@supports (background: color-mix(in srgb, red, blue)) {
+  .overlay:not(.opaque) {
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+  }
+}
+
+.dialog {
+  width: min(100%, 360px);
+  padding: 24px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.dialog-title {
+  margin: 0 0 12px;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.dialog-text {
+  margin-bottom: 20px;
+  color: var(--text-muted);
+}
+
+.dialog-text p { margin: 4px 0; }
+
+.dialog-text .dialog-achievement {
+  margin-top: 12px;
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ---------- Подсказка-тост и скрытый текст для экранных дикторов ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--safe-area-inset-bottom) + 130px);
+  z-index: 90;
+  max-width: 90%;
+  padding: 10px 16px;
+  border-radius: 20px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 0.9375rem;
+  text-align: center;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease-in);
+}
+
+.toast.show {
+  opacity: 1;
+  transition-timing-function: var(--ease-out);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Ландшафт на телефоне ---------- */
+/* Вертикального места мало, поэтому поле слева (квадрат по высоте экрана),
+ * а шапка, кнопки действий и цифры — колонкой справа.
+ * Манифест просит portrait, но iOS его игнорирует и экран всё равно можно повернуть */
+@media (orientation: landscape) and (max-height: 520px) {
+  #screen-game {
+    max-width: none;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "board header"
+      "board actions"
+      "board numpad";
+    column-gap: 16px;
+    align-content: start;
+  }
+
+  #screen-game .game-header { grid-area: header; }
+
+  #screen-game .board {
+    grid-area: board;
+    margin: 0;
+    min-width: 0;
+    width: calc(100vh - 2 * var(--page-pad) - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
+    width: calc(100dvh - 2 * var(--page-pad) - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
+  }
+
+  #screen-game .actions { grid-area: actions; margin-top: 8px; }
+  #screen-game .numpad { grid-area: numpad; align-self: start; }
+
+  .toast { bottom: calc(var(--safe-area-inset-bottom) + 16px); }
+}

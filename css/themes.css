@@ -1,0 +1,81 @@
+/* Темы. Все цвета приложения — только через переменные, чтобы смена темы
+ * не требовала правок в остальных файлах.
+ *
+ * Порядок правил важен:
+ *  1) :root — светлая тема по умолчанию;
+ *  2) системная тёмная — только если пользователь не выбрал светлую вручную;
+ *  3) ручной выбор [data-theme] побеждает системные настройки. */
+
+:root {
+  color-scheme: light;
+
+  --bg: #ffffff;
+  --grid: #e0e0e0;
+  --grid-strong: #757575;         /* границы блоков 3x3: тонкие линии #e0e0e0 слишком слабы, чтобы выделять блоки */
+  --cell-selected: #e3f2fd;
+  --cell-related: #f5f5f5;
+  --text: #212121;
+  --text-muted: #616161;          /* 6.0:1 на белом — проходит WCAG AA */
+  --accent: #4a90e2;              /* заливки, рамки, подсветка */
+  --accent-strong: #2f6fb8;       /* фон кнопок с белым текстом (5.1:1) */
+  --on-accent: #ffffff;
+
+  --surface: #f5f5f5;             /* фон второстепенных кнопок */
+  --surface-pressed: #e6e9ec;
+  --border: #e0e0e0;
+
+  /* Цвета для клеток сетки (понадобятся на Этапе 3) */
+  --given: #616161;               /* предзаполненные — серые */
+  --user: #1565c0;                /* введённые игроком — синие */
+  --error: #c62828;               /* конфликты — красные */
+}
+
+/* Системная тёмная тема, если игрок явно не выбрал светлую */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #121212;
+    --grid: #424242;
+    --grid-strong: #8a8a8a;
+    --cell-selected: #1e3a5f;
+    --cell-related: #1e1e1e;
+    --text: #e0e0e0;
+    --text-muted: #b0b0b0;
+    --accent: #64b5f6;
+    --accent-strong: #64b5f6;
+    --on-accent: #0d1b2a;         /* тёмный текст на светло-синем — контраст > 8:1 */
+
+    --surface: #1e1e1e;
+    --surface-pressed: #2c2c2c;
+    --border: #424242;
+
+    --given: #b0b0b0;
+    --user: #64b5f6;
+    --error: #ef5350;
+  }
+}
+
+/* Ручной выбор тёмной темы */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #121212;
+  --grid: #424242;
+  --grid-strong: #8a8a8a;
+  --cell-selected: #1e3a5f;
+  --cell-related: #1e1e1e;
+  --text: #e0e0e0;
+  --text-muted: #b0b0b0;
+  --accent: #64b5f6;
+  --accent-strong: #64b5f6;
+  --on-accent: #0d1b2a;
+
+  --surface: #1e1e1e;
+  --surface-pressed: #2c2c2c;
+  --border: #424242;
+
+  --given: #b0b0b0;
+  --user: #64b5f6;
+  --error: #ef5350;
+}
