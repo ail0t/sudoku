@@ -47,7 +47,10 @@
     <!-- ===== Экран меню ===== -->
     <main id="screen-menu" class="screen" aria-labelledby="menu-title">
       <header class="menu-header">
-        <h1 id="menu-title">Судоку</h1>
+        <div class="menu-title">
+          <h1 id="menu-title">Судоку</h1>
+          <span class="dedication">для любимой Лизаньки❤️</span>
+        </div>
         <button id="theme-toggle" class="icon-btn" type="button" aria-label="Переключить тему">
           <span aria-hidden="true">◐</span>
         </button>
@@ -124,6 +127,8 @@
         <button id="pause-btn" class="icon-btn" type="button" aria-label="Пауза">
           <span aria-hidden="true">❚❚</span>
         </button>
+        <!-- Вторая строка шапки: так надпись остаётся на месте и в портрете, и в ландшафте -->
+        <p class="dedication">для любимой Лизаньки❤️</p>
       </header>
 
       <!-- Сетку 9x9 отрисует ui.js (Этап 3) -->

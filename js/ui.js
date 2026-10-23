@@ -358,10 +358,13 @@
     state.paused = true;
     stopTimer();
     save();
+    const body = document.createElement('div');
+    body.append(el('p', '', 'Таймер остановлен.'),
+                el('p', 'dialog-dedication', 'для любимой Лизаньки❤️'));
     // Сплошной фон: на паузе поле видеть нельзя, иначе можно думать «бесплатно»
     showDialog({
       title: 'Пауза',
-      text: 'Таймер остановлен.',
+      body,
       opaque: true,
       buttons: [
         { label: 'Продолжить', primary: true, onClick: resume },

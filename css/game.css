@@ -257,3 +257,9 @@
 
   .toast { bottom: calc(var(--safe-area-inset-bottom) + 16px); }
 }
+
+/* Строка-посвящение в окне паузы */
+.dialog-text .dialog-dedication {
+  margin-top: 12px;
+  color: var(--text);
+}

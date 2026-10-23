@@ -203,10 +203,35 @@ button:focus-visible {
 
 .game-header {
   display: flex;
+  flex-wrap: wrap;              /* надпись уходит на вторую строку */
   align-items: center;
   justify-content: space-between;
-  gap: var(--gap);
+  gap: 0 var(--gap);
   min-height: var(--tap);
+}
+
+/* Надпись-посвящение */
+.dedication {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.menu-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+  min-width: 0;
+}
+
+.game-header .dedication {
+  flex: 0 0 100%;
+  order: 3;
+  padding-bottom: 2px;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .game-info {
@@ -225,10 +250,10 @@ button:focus-visible {
 /* Размер поля: на узких экранах — по ширине, на низких — по высоте,
  * чтобы панель цифр всегда оставалась в пределах экрана (iPhone SE) */
 .board {
-  /* 310px — высота всего, что не поле: шапка, действия, цифры, отступы.
+  /* 330px — высота всего, что не поле: шапка с надписью, действия, цифры, отступы.
    * Первая строка с vh — запасная для браузеров без dvh (iOS < 15.4) */
-  width: min(100%, calc(100vh - 310px - var(--safe-area-inset-top) - var(--safe-area-inset-bottom)));
-  width: min(100%, calc(100dvh - 310px - var(--safe-area-inset-top) - var(--safe-area-inset-bottom)));
+  width: min(100%, calc(100vh - 330px - var(--safe-area-inset-top) - var(--safe-area-inset-bottom)));
+  width: min(100%, calc(100dvh - 330px - var(--safe-area-inset-top) - var(--safe-area-inset-bottom)));
   min-width: 240px;
   aspect-ratio: 1 / 1;
   margin: 8px auto;
